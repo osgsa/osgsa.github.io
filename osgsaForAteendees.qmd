@@ -1,0 +1,620 @@
+---
+title: "OSGSA R Workshop"
+format: revealjs
+editor: source
+echo: true
+scrollable: true
+embed-resources: true
+---
+
+## Setup
+Please make sure you have the following packages installed:
+```{r setup echo: false message: false}
+library(tidyverse)
+library(palmerpenguins)
+```
+
+For later:
+```{r}
+library(dataRetrieval)
+library(EnvStats)
+library(lubridate)
+```
+
+
+## Welcome
+![](comic.png){width=20% fig-align="center"}
+
+## Housekeeping + Format
+- Please ask for help!
+
+
+## Outline
+
+- part 1: the building blocks of programming
+- part 2: learning R with the internet
+- part 3: debugging
+
+## Part 1: Scaffolding
+![](scaffold.png)
+
+## Practice Scaffolding
+
+![](message.png)
+```{r}
+mydataset <- penguins
+unique(mydataset$species)
+unique(mydataset$year)
+```
+## STOP!
+- Get a piece of paper!
+![](returndiagram.png)
+Sometimes called stack diagrams 
+
+## First, get a working function 
+```{r}
+makeMyPlots <- function(myInput1, myInput2) {
+  myOutput <- myInput1 * myInput2
+  return(myOutput)
+}
+
+makeMyPlots(8, 10)
+```
+## Second, make a simple example *without* a function
+Steps:
+- filter species and year
+- make a plot
+
+
+## Second, make a simple example *without* a function
+```{r}
+filteredData <- mydataset %>% 
+  filter(species == "Adelie") %>% 
+  filter(year == 2009) 
+
+rmarkdown::paged_table(filteredData)
+```
+## Second, make a simple example *without* a function
+```{r}
+ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+  geom_point()
+```
+## Third, combine the function and simple example by substituting variables
+```{r}
+makeMyPlots <- function(myInput1, myInput2) {
+  myOutput <- myInput1 * myInput2
+  return(myOutput)
+}
+
+filteredData <- mydataset %>% 
+  filter(species == "Adelie") %>% 
+  filter(year == 2009) 
+
+plot <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+  geom_point()
+
+plot
+```
+
+
+## Third, combine the function and simple example by substituting variables
+```{r}
+makeMyPlots <- function(speciesIn, yearIn) {
+  #filter for speciesIn, yearIn
+  #make plot called "plotoOutput"
+  return(plotOutput)
+}
+
+#example to reference
+filteredData <- mydataset %>% 
+  filter(species == "Adelie") %>% 
+  filter(year == 2009) 
+
+plot <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+  geom_point()
+
+plot
+```
+
+
+## Third, combine the function and simple example by substituting variables 
+```{r}
+makeMyPlots <- function(speciesIn, yearIn) {
+  #Filter data
+  filteredData <- mydataset %>% 
+    filter(species == speciesIn) %>% 
+    filter(year == yearIn) 
+ #Plot output
+  plotOutput <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+    geom_point()
+  
+  #Return Output
+  return(plotOutput)
+}
+
+
+plot <- makeMyPlots("Adelie", 2009)
+
+plot
+```
+
+
+## Note the difference between global and local variables. 
+
+```{r}
+#| error: true
+plotOutput + theme_bw()
+```
+## Note the difference between global and local variables. 
+
+```{r}
+makeMyPlots <- function(speciesIn, yearIn) {
+  #Filter data
+  filteredData <- mydataset %>% 
+    filter(species == speciesIn) %>% 
+    filter(year == yearIn) 
+ #Plot output
+  plotOutput <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+    geom_point() +
+    theme_bw()
+  
+  #Return Output
+  return(plotOutput)
+}
+
+
+makeMyPlots("Adelie", 2009)
+```
+
+## Note the difference between global and local variables. 
+
+```{r}
+makeMyPlots("Adelie", 2009)
+
+```
+
+## Can choose to rinse + repeat or edit function directly 
+```{r}
+makeMyPlots <- function(speciesIn, yearIn) {
+  #Filter data
+  filteredData <- mydataset %>% 
+    filter(species == speciesIn) %>% 
+    filter(year == yearIn) 
+ #Plot output
+  plotOutput <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+    geom_point() +
+    theme_bw() +
+    labs(x = "Flipper Length", y = "Body Mass", title = "Flipper Length vs. Body Mass")
+  
+  #Return Output
+  return(plotOutput)
+}
+
+
+makeMyPlots("Adelie", 2009)
+```
+
+## Can choose to rinse + repeat or edit function directly 
+```{r}
+makeMyPlots("Adelie", 2009)
+```
+
+
+## using apply()
+```{r}
+listOfSpecies <- unique(mydataset$species)
+listOfSpecies
+```
+```{r}
+#| error: true
+lapply(listOfSpecies, makeMyPlots)
+```
+## using apply()
+```{r}
+lapply(listOfSpecies, makeMyPlots, year = 2009)
+```
+## How to make all plots efficiently? Method 1: 
+```{r}
+unique(mydataset$year)
+```
+```{r}
+lapply(listOfSpecies, makeMyPlots, year = 2007)
+lapply(listOfSpecies, makeMyPlots, year = 2008)
+lapply(listOfSpecies, makeMyPlots, year = 2009)
+```
+
+## What if you had more years? 
+
+## The For loop
+![](loop.jpg)
+
+## Same process of scaffolding
+```{r}
+for (i in 1:10) {
+  print(i * 10)
+}
+```
+## For loop with char list
+```{r}
+for (i in c("Red", "Blue", "Green", "Yellow")) {
+  text <- paste("my favorite color is", i)
+  print(text)
+}
+```
+
+## Quick note on global variables
+We can call variables made inside loops outside of them, unlike functions. 
+```{r}
+for (i in 1:10) {
+  print(i)
+}
+print(paste("R thinks the var i is", i))
+```
+## Same process of scaffolding
+```{r}
+for (i in 2007:2009) {
+  print(i)
+}
+```
+## Same process of scaffolding
+```{r}
+for (yearVariable in 2007:2009) {
+  print(yearVariable)
+}
+
+#apply(listOfSpecies, makeMyPlots, year = 2007)
+
+```
+Year will be i
+
+## Same process of scaffolding
+```{r}
+for (yearVariable in 2007:2009) {
+  p <- lapply(listOfSpecies, makeMyPlots, year = yearVariable)
+  print(p)
+}
+
+```
+
+## Label plots programatically 
+```{r}
+
+makeMyPlots <- function(speciesIn, yearIn) {
+  #Filter data
+  filteredData <- mydataset %>% 
+    filter(species == speciesIn) %>% 
+    filter(year == yearIn) 
+ #Plot output
+  plotOutput <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+    geom_point() +
+    theme_bw() +
+    labs(x = "Flipper Length", y = "Body Mass", title = "Flipper Length vs. Body Mass")
+  
+  #Return Output
+  return(plotOutput)
+}
+
+
+makeMyPlots("Adelie", 2009)
+```
+
+## Label plots programatically 
+```{r}
+
+makeMyPlots <- function(speciesIn, yearIn) {
+  #Filter data
+  filteredData <- mydataset %>% 
+    filter(species == speciesIn) %>% 
+    filter(year == yearIn) 
+########################################
+ #Generate a plot title
+  plotTitle <- paste("F.L. vs Mass for", speciesIn, "Penguins in", yearIn)
+######################################## 
+ #Plot output
+  plotOutput <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+    geom_point() +
+    theme_bw() +
+    labs(x = "Flipper Length", y = "Body Mass", title = plotTitle)
+  
+  #Return Output
+  return(plotOutput)
+}
+
+
+makeMyPlots("Adelie", 2009)
+```
+## Now call plots again
+```{r}
+for (yearVariable in 2007:2009) {
+  p <- lapply(listOfSpecies, makeMyPlots, year = yearVariable)
+  print(p)
+}
+
+```
+## NESTED for loop?!
+```{r}
+for (yearVariable in 2007:2009) {
+  for (specVariable in unique(mydataset$species)) {
+      p <- makeMyPlots(specVariable, yearVariable)
+      print(p)
+  }
+  print(p)
+}
+
+```
+
+## Final script
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+
+mydataset <- penguins
+
+makeMyPlots <- function(speciesIn, yearIn) {
+  #Filter data
+  filteredData <- mydataset %>% 
+    filter(species == speciesIn) %>% 
+    filter(year == yearIn) 
+
+ #Generate a plot title
+  plotTitle <- paste("F.L. vs Mass for", speciesIn, "Penguins in", yearIn)
+
+ #Plot output
+  plotOutput <- ggplot(filteredData, aes(x = flipper_length_mm, y = body_mass_g, color = sex)) + 
+    geom_point() +
+    theme_bw() +
+    labs(x = "Flipper Length", y = "Body Mass", title = plotTitle)
+  
+  #Return Output
+  return(plotOutput)
+}
+
+for (yearVariable in 2007:2009) {
+  p <- lapply(listOfSpecies, makeMyPlots, year = yearVariable)
+  print(p)
+}
+```
+
+## Part two: learning + debugging
+
+## 3 Strategies:
+- Print statements
+- Reverse scaffolding
+- The rubber ducky method
+
+## Stack overflow is my best friend
+https://stackoverflow.com/questions/tagged/r
+
+## Chat GPT is not your friend
+```{r}
+#| error: true
+# Load necessary libraries
+#install.packages("dataRetrieval")
+library(dataRetrieval)
+library(dplyr)
+library(lubridate)
+
+# Step 1: Define the site number
+site_number <- "11NPSWRD_WQX-ISRO_07"  # Replaced with actual site number
+
+# Step 2: Define the parameters you want to retrieve
+parameter_code <- "00300"  # Dissolved oxygen parameter code
+
+# Step 3: Retrieve the data
+# Here we are retrieving data for the last 5 years, adjust the dates as needed
+start_date <- as.Date(Sys.Date()) - years(5)
+end_date <- Sys.Date()
+
+water_quality_data <- readNWISdata(
+  siteNumbers = site_number,
+  parameterCd = parameter_code,
+  startDate = start_date,
+  endDate = end_date
+)
+
+# Step 4: Prepare the data
+# Check the structure of the data
+str(water_quality_data)
+
+# Convert date column to Date type
+water_quality_data$Date <- as.Date(water_quality_data$Date)
+
+# Step 5: Run the Seasonal Kendall test for dissolved oxygen
+# Assuming 'Value' is the column with dissolved oxygen values
+water_quality_data <- water_quality_data %>%
+  rename(Dissolved_Oxygen = Value)
+
+# Create a time series object
+ts_data <- ts(water_quality_data$Dissolved_Oxygen, start = c(year(min(water_quality_data$Date)), month(min(water_quality_data$Date))), frequency = 12)
+
+# Run the Seasonal Kendall test
+#install.packages("Kendall")  # Install if not already done
+library(Kendall)
+sk_test <- SeasonalKendall(ts_data)
+
+# Display the results
+print(sk_test)
+```
+## Documentation is almost always extremely helpful!
+https://waterdata.usgs.gov/blog/dataretrieval/
+
+## Swititch to R Studio View
+
+## Isle Royale Inland Lakes Data
+```{r}
+library(dataRetrieval)
+siskiwitID <- "11NPSWRD_WQX-ISRO_07"
+beaverID <- "11NPSWRD_WQX-ISRO_04"
+
+#Read WQP Data 
+lakeData <- readWQPqw(c(siteNumbers = c(beaverID, siskiwitID),""),'','')  
+
+rmarkdown::paged_table(lakeData)
+```
+## Error messages are your friend
+
+## Sometimes error messages provide sufficient info
+```{r}
+#| error: true
+ ## Select relevant columns and rename
+
+lakeDataCols <- lakeData %>% 
+  select(CharacteristicName, 
+         ResultMeasureValue, 
+         ResultMeasure.MeasureUnitCode, 
+         ActivityEndDate,
+         ActivityEndTime.Time,
+         ActivityDepthHeightMeasure.MeasureValue,
+         MonitoringLocationIdentifier) %>% 
+  rename(Variable = CharacteristicName,
+         ResultMeasureValue = Value, 
+         Units = ResultMeasure.MeasureUnitCode,
+         ActivityEndDate = Date,
+         ActivityEndTime.Time = Time,
+        ActivityDepthHeightMeasure.MeasureValue = Depth,
+        MonitoringLocationIdentifier = SiteID)
+
+rmarkdown::paged_table(lakeDataCols)
+```
+
+## Sometimes error messages provide sufficient info
+```{r}
+
+ 
+lakeDataCols <- lakeData %>% 
+  select(CharacteristicName, 
+         ResultMeasureValue, 
+       #  ResultMeasure.MeasureUnitCode, 
+         ActivityEndDate,
+         ActivityEndTime.Time,
+         ActivityDepthHeightMeasure.MeasureValue,
+         MonitoringLocationIdentifier) %>% 
+  rename(Variable = CharacteristicName,
+         Value = ResultMeasureValue, 
+     #    Units = ResultMeasure.MeasureUnitCode,
+         Date = ActivityEndDate,
+          Time = ActivityEndTime.Time,
+        Depth = ActivityDepthHeightMeasure.MeasureValue,
+       SiteID = MonitoringLocationIdentifier)
+
+rmarkdown::paged_table(lakeDataCols)
+```
+## Task: Make a model to check if Temperature is correlated with Dissolved Oxygen
+```{r}
+rmarkdown::paged_table(lakeDataCols)
+```
+
+## Task: Make a model to check if Temperature is correlated with Dissolved Oxygen
+```{r}
+#Many methods!
+#Check stack overflow
+```
+
+
+## My preferred way
+```{r}
+lakeDataClean <- lakeDataCols %>% 
+  mutate(Value = as.numeric(Value)) 
+lakesWide <- pivot_wider(lakeDataClean, names_from = Variable, values_from = Value) 
+rmarkdown::paged_table(lakesWide)
+
+```
+
+
+#Listen to error messages and check R help window!
+```{r}
+lakeDataClean <- lakeDataCols %>% 
+  mutate(Value = as.numeric(Value))
+lakesWide <- pivot_wider(lakeDataClean, names_from = Variable, values_from = Value, values_fn = mean) 
+rmarkdown::paged_table(lakesWide)
+ggplot(lakesWide, aes(x = `Temperature, water`, y = `Dissolved oxygen saturation`)) +
+  geom_point()
+myModel <- lm(`Dissolved oxygen saturation` ~ `Temperature, water`, data = lakesWide)
+summary(myModel)
+```
+```{r}
+lakeDataClean
+```
+
+## TWO ERROR VERSION
+```{r}
+library(EnvStats)
+library(lubridate)
+
+#Setting defaults
+
+
+lakes <- lakeDataClean %>% 
+  mutate(Month = month(Date)) %>% 
+  mutate(year = year(Date))
+
+
+
+run_smk <- function(site, var, depth) {
+ # Filter selected data
+  byVar <- lakes %>% 
+    filter(SiteID == site) %>% 
+    filter(Variable == var) %>% 
+    filter(Depth <= depth) %>% 
+    filter(!is.na(Month))
+  
+    if (length(unique(byVar$year)) > 2) {
+      #This is the SMK Call
+    k <- kendallSeasonalTrendTest(byVar$Value ~ byVar$Month + byVar$year)
+    return(k)
+    
+  }
+}
+
+k <- run_smk("11NPSWRD_WQX-ISRO_07","pH", 1.5)
+k
+```
+
+
+## CORRECT VERTSION 
+```{r}
+library(EnvStats)
+library(lubridate)
+
+
+lakes <- lakeDataClean %>% 
+  mutate(Month = month(Date)) %>% 
+  mutate(Year = year(Date))
+
+lakes
+run_smk <- function(site, var, depth) {
+ # Filter selected data
+  byVar <- lakes %>% 
+    filter(Variable == var) %>% 
+    filter(SiteID == site) %>% 
+    filter(Depth <= depth) %>% 
+    filter(!is.na(Month))
+    #This just removes years without data
+    if (length(unique(byVar$Year)) > 2) {
+      #This is the SMK Call
+    k <- kendallSeasonalTrendTest(byVar$Value ~ byVar$Month + byVar$Year)
+    print(site)
+    return(k)
+    
+    }
+}
+
+k <- run_smk(var = "pH", depth = 1.5, site = "11NPSWRD_WQX-ISRO_07")
+k
+```
+  
+
+## Rubber ducky method
+```{r}
+largestBird <- penguins %>%
+  arrange(body_mass_g) %>% 
+  mutate(color = if_else(body_mass_g > (2 * sd(penguins$body_mass_g)), "medium", "large")) %>% 
+  ggplot(aes(x = body_mass_g, y = bill_length_mm, color = color)) +
+  geom_point()
+
+largestBird
+#maxMass <- largestBird$body_mass_g[1]
+```
+
+
+
